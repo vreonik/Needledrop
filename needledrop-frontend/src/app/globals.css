@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --header-bg: #4B4A7F;
+    --background: #2F2E4F;
+    --buttons: #C6B8FF;
+    --interactive: #5BA4FF;
+    --neutral-light: #E9E9F2;
+    --neutral-white: #FCFCFF;
+    --text-dark: #0F0F1A;
+}
+
+body {
+    background-color: var(--background);
+    color: var(--neutral-white);
+}
+
+@layer components {
+    .btn-primary {
+        @apply bg-buttons text-text-dark px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition-all duration-200;
+    }
+
+    .btn-secondary {
+        @apply bg-interactive text-neutral-white px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition-all duration-200;
+    }
+
+    .card {
+        @apply bg-gradient-to-br from-header to-background border border-header/30 rounded-xl p-6 shadow-lg;
+    }
+}
