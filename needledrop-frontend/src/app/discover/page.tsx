@@ -1,9 +1,8 @@
-import Link from 'next/link'
+import Link from 'next/link';
 
 export default function DiscoverPage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation Header */}
       <header className="bg-header border-b border-header/30">
         <div className="container mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
@@ -23,19 +22,18 @@ export default function DiscoverPage() {
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="container mx-auto px-4 py-16">
         <div className="text-center max-w-2xl mx-auto">
           <h1 className="text-4xl font-bold mb-6">Discover Music</h1>
           <p className="text-xl text-neutral-light mb-12">
-            Explore trending albums and everything you wish because I said it like that.
+            Browse albums and explore recommendations. This section is currently a UI placeholder.
           </p>
 
-          {/* Coming Soon Placeholder */}
           <div className="card max-w-md mx-auto">
-            <h2 className="text-2xl font-semibold mb-4">Coming Soon</h2>
+            <h2 className="text-2xl font-semibold mb-4">In Progress</h2>
             <p className="text-neutral-light mb-6">
-              Music features are currently in development, check in a few months or never:)
+              Discover features will be connected to the backend API (search, filters, trending).
+              For now, this page shows the intended structure.
             </p>
             <Link href="/" className="btn-primary">
               Back to Home
@@ -44,5 +42,5 @@ export default function DiscoverPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }
