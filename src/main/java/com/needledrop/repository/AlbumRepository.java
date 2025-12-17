@@ -12,19 +12,15 @@ import java.util.List;
 @Repository
 public interface AlbumRepository extends JpaRepository<Album, Long> {
 
-    // Add this method
+    // Ownership / user-scoped queries
     boolean existsByTitleAndCreatedBy(String title, User createdBy);
-
-    // Also add this method that's referenced in printSummary()
     long countByCreatedBy(User createdBy);
-
-    // Find albums by user ID
     List<Album> findByCreatedById(Long userId);
 
-    // Search albums
+    // Simple search (title or artist)
     List<Album> findByTitleContainingIgnoreCaseOrArtistContainingIgnoreCase(String title, String artist);
 
-    // Advanced search
+    // Flexible filtering
     @Query("SELECT a FROM Album a WHERE " +
             "(:title IS NULL OR LOWER(a.title) LIKE LOWER(CONCAT('%', :title, '%'))) AND " +
             "(:artist IS NULL OR LOWER(a.artist) LIKE LOWER(CONCAT('%', :artist, '%'))) AND " +
@@ -36,12 +32,8 @@ public interface AlbumRepository extends JpaRepository<Album, Long> {
                                @Param("yearFrom") Integer yearFrom,
                                @Param("yearTo") Integer yearTo);
 
-    // Find by genre
+    // Convenience filters
     List<Album> findByGenreIgnoreCase(String genre);
-
-    // Find by artist
     List<Album> findByArtistIgnoreCase(String artist);
-
-    // Find by year range
     List<Album> findByReleaseYearBetween(Integer startYear, Integer endYear);
 }

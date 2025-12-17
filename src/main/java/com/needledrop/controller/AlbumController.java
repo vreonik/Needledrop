@@ -1,22 +1,16 @@
 package com.needledrop.controller;
 
 import com.needledrop.dto.CreateAlbumRequest;
-import com.needledrop.dto.DeleteAlbumRequest;
 import com.needledrop.dto.UpdateAlbumRequest;
 import com.needledrop.entity.Album;
-import com.needledrop.entity.User;
-import com.needledrop.repository.SongRepository;
 import com.needledrop.service.AlbumService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/albums")
@@ -28,14 +22,11 @@ public class AlbumController {
         this.albumService = albumService;
     }
 
-    // GET all albums
     @GetMapping
     public ResponseEntity<List<Album>> getAllAlbums() {
-        List<Album> albums = albumService.getAllAlbums();
-        return ResponseEntity.ok(albums);
+        return ResponseEntity.ok(albumService.getAllAlbums());
     }
 
-    // GET album by ID
     @GetMapping("/{id}")
     public ResponseEntity<Album> getAlbumById(@PathVariable Long id) {
         return albumService.getAlbumById(id)
@@ -43,66 +34,75 @@ public class AlbumController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // GET albums by user ID
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Album>> getAlbumsByUser(@PathVariable Long userId) {
-        List<Album> albums = albumService.getAlbumsByUserId(userId);
-        return ResponseEntity.ok(albums);
+        return ResponseEntity.ok(albumService.getAlbumsByUserId(userId));
     }
 
-    // GET current user's albums
+    // Authenticated convenience endpoint
     @GetMapping("/my-albums")
-    public ResponseEntity<List<Album>> getMyAlbums(Authentication authentication) {
-        User currentUser = (User) authentication.getPrincipal();
-        List<Album> albums = albumService.getAlbumsByUserId(currentUser.getId());
-        return ResponseEntity.ok(albums);
+    public ResponseEntity<?> getMyAlbums(Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            return ResponseEntity.ok(albumService.getAlbumsByUsername(username));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Failed to get albums: " + e.getMessage()));
+        }
     }
 
     @PostMapping
-    public ResponseEntity<Album> createAlbum(@RequestBody CreateAlbumRequest request,
-                                             Authentication authentication) {
-        String username = authentication.getName();
-        Album album = albumService.createAlbum(request, username);
-        return ResponseEntity.status(HttpStatus.CREATED).body(album);
+    public ResponseEntity<?> createAlbum(@RequestBody CreateAlbumRequest request,
+                                         Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            Album album = albumService.createAlbum(request, username);
+            return ResponseEntity.status(HttpStatus.CREATED).body(album);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Album> updateAlbum(@PathVariable Long id,
-                                             @RequestBody UpdateAlbumRequest request,
-                                             Authentication authentication) {
-
-        String username = authentication.getName();
-        System.out.println("Updating album " + id + " for user: " + username);
-
-        Album updatedAlbum = albumService.updateAlbum(id, request, username);
-        return ResponseEntity.ok(updatedAlbum);
+    public ResponseEntity<?> updateAlbum(@PathVariable Long id,
+                                         @RequestBody UpdateAlbumRequest request,
+                                         Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            Album updatedAlbum = albumService.updateAlbum(id, request, username);
+            return ResponseEntity.ok(updatedAlbum);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 
-    // DELETE album
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAlbum(@PathVariable Long id,
-                                            Authentication authentication) {
-        String username = authentication.getName();
-        System.out.println("Username from JWT: " + username);
-        albumService.deleteAlbum(id, username);
-        return ResponseEntity.noContent().build();
-    }
-    @DeleteMapping("/test/{id}")
-    public ResponseEntity<Void> testDelete(@PathVariable Long id) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println("TEST - Auth class: " + auth.getClass());
-        System.out.println("TEST - Principal class: " + auth.getPrincipal().getClass());
-        System.out.println("TEST - Username: " + auth.getName());
-
-        // Force it to work:
-        albumService.deleteAlbum(id, auth.getName());
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> deleteAlbum(@PathVariable Long id,
+                                         Authentication authentication) {
+        try {
+            String username = authentication.getName();
+            albumService.deleteAlbum(id, username);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            if (e.getMessage() != null && e.getMessage().toLowerCase().contains("not found")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", e.getMessage()));
+            }
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<Album>> searchAlbums(@RequestParam String query) {
-        List<Album> albums = albumService.searchAlbums(query);
-        return ResponseEntity.ok(albums);
+        return ResponseEntity.ok(albumService.searchAlbums(query));
     }
 
     @GetMapping("/advanced-search")
@@ -113,30 +113,23 @@ public class AlbumController {
             @RequestParam(required = false) Integer yearFrom,
             @RequestParam(required = false) Integer yearTo) {
 
-        List<Album> albums = albumService.advancedSearch(title, artist, genre, yearFrom, yearTo);
-        return ResponseEntity.ok(albums);
+        return ResponseEntity.ok(albumService.advancedSearch(title, artist, genre, yearFrom, yearTo));
     }
 
-    // Get albums by genre
     @GetMapping("/genre/{genre}")
     public ResponseEntity<List<Album>> getAlbumsByGenre(@PathVariable String genre) {
-        List<Album> albums = albumService.getAlbumsByGenre(genre);
-        return ResponseEntity.ok(albums);
+        return ResponseEntity.ok(albumService.getAlbumsByGenre(genre));
     }
 
-    // Get albums by artist
     @GetMapping("/artist/{artist}")
     public ResponseEntity<List<Album>> getAlbumsByArtist(@PathVariable String artist) {
-        List<Album> albums = albumService.getAlbumsByArtist(artist);
-        return ResponseEntity.ok(albums);
+        return ResponseEntity.ok(albumService.getAlbumsByArtist(artist));
     }
 
-    // Get albums by year range
     @GetMapping("/year-range")
     public ResponseEntity<List<Album>> getAlbumsByYearRange(
             @RequestParam Integer from,
             @RequestParam Integer to) {
-        List<Album> albums = albumService.getAlbumsByYearRange(from, to);
-        return ResponseEntity.ok(albums);
+        return ResponseEntity.ok(albumService.getAlbumsByYearRange(from, to));
     }
 }

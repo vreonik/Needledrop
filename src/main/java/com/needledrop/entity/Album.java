@@ -2,7 +2,6 @@ package com.needledrop.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "albums")
@@ -12,35 +11,36 @@ public class Album {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Core album fields
     private String title;
     private String artist;
     private Integer releaseYear;
     private String genre;
     private String coverImageUrl;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    // The user that created this album (used for ownership checks in service layer)
     @ManyToOne
     @JoinColumn(name = "created_by_id")
     private User createdBy;
 
-    // Constructors
-    public Album() {
+    public Album() {}
+
+    // Keep timestamps consistent
+    @PrePersist
+    private void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 
-    // Getters and setters
-    public String getCoverImageUrl() {
-        return coverImageUrl;
-    }
-
-    public void setCoverImageUrl(String coverImageUrl) {
-        this.coverImageUrl = coverImageUrl;
+    @PreUpdate
+    private void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 
     public Long getId() { return id; }
@@ -57,6 +57,9 @@ public class Album {
 
     public String getGenre() { return genre; }
     public void setGenre(String genre) { this.genre = genre; }
+
+    public String getCoverImageUrl() { return coverImageUrl; }
+    public void setCoverImageUrl(String coverImageUrl) { this.coverImageUrl = coverImageUrl; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
